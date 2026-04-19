@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RAG Search Engine</title>
+    <meta charset="UTF-8">
+<style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #0f172a, #1e293b);
+        color: white;
+    }
+
+    h1 {
+        text-align: center;
+        padding: 20px;
+        color: #38bdf8;
+    }
+
+    .container {
+        width: 65%;
+        margin: auto;
+    }
+
+    .card {
+        background: #1e293b;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    input[type="file"] {
+        margin-bottom: 10px;
+    }
+
+    input[type="text"] {
+        width: 70%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        font-size: 15px;
+    }
+
+    button {
+        padding: 10px 16px;
+        margin-left: 8px;
+        background: #38bdf8;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    button:hover {
+        background: #0ea5e9;
+    }
+
+    .chat-box {
+        background: #020617;
+        border-radius: 12px;
+        padding: 20px;
+        height: 400px;
+        overflow-y: auto;
+        text-align: left;
+    }
+
+    .message {
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 10px;
+        max-width: 75%;
+        white-space: pre-wrap;
+    }
+
+    .user {
+        background: #2563eb;
+        margin-left: auto;
+        text-align: right;
+    }
+
+    .bot {
+        background: #1e293b;
+        text-align: left;
+    }
+
+    .status {
+        margin-top: 10px;
+        color: #22c55e;
+    }
+</style>
+</head>
+
+<body>
+    <h1>Knowledge Based Search Engine</h1>
+    <div class="container">
+         <p id="result"></p>
+<!-- Upload Section -->
+<div class="card">
+    <input type="file" id="fileInput" onchange="updateFileName()">
+    <button type="button" onclick="uploadFile()">Upload PDF</button>
+    <p id="fileName">No file selected</p>
+    <p id="status" class="status"></p>
+</div>
+
+
+<!-- Query Section -->
+<div class="card">
+    <input type="text" id="query" placeholder="Ask something about the document...">
+   <button type="button" onclick="sendQuery()">Search</button>
+</div>
+<!-- Chat Section -->
+<div class="chat-box" id="chatBox"></div>
+
+<script>
+let uploaded = false;
+
+function updateFileName() {
+    const fileInput = document.getElementById("fileInput");
+    const fileName = document.getElementById("fileName");
+    fileName.innerText = fileInput.files[0]?.name || "No file selected";
+}
+
+// ✅ Upload
+async function uploadFile() {
+    console.log("UPLOAD CLICKED");
+    const fileInput = document.getElementById("fileInput");
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please select a file!");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    document.getElementById("result").innerText = " Uploading...";
+
+    try {
+        const response = await fetch("http://127.0.0.1:8000/upload", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        uploaded = true;
+
+        document.getElementById("fileName").innerText =
+            " Uploaded: " + file.name;
+
+        document.getElementById("result").innerText =
+            "✅ Upload successful!";
+
+    } catch (error) {
+        document.getElementById("result").innerText =
+            "❌ Upload failed";
+    }
+}
+function addMessage(text, type) {
+    const chatBox = document.getElementById("chatBox");
+
+    const msg = document.createElement("div");
+    msg.classList.add("message", type);
+    msg.innerText = text;
+
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+// ✅ Query
+async function sendQuery() {
+    console.log("SEARCH CLICKED");   // 👈 ADD THIS FIRST
+
+    if (!uploaded) {
+        alert("Please upload a document first!");
+        return;
+    }
+
+    const query = document.getElementById("query").value;
+
+    if (!query) {
+        alert("Enter a question!");
+        return;
+    }
+
+    addMessage("Q: " + query, "user");
+    document.getElementById("query").value = "";
+
+    const chatBox = document.getElementById("chatBox");
+
+    const botMsg = document.createElement("div");
+    botMsg.classList.add("message", "bot");
+    botMsg.innerText = "⏳ Thinking...";
+    chatBox.appendChild(botMsg);
+    await new Promise(r => setTimeout(r, 1500));
+    try {
+        const response = await fetch("http://127.0.0.1:8000/query", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ query })
+        });
+
+        const data = await response.json();
+
+        console.log("API RESPONSE:", data);
+
+        botMsg.innerText = "A: " + (data.answer || "No answer");
+
+    } catch (error) {
+        console.error(error);
+        botMsg.innerText = "❌ Error";
+    }
+}
+</script>
+</body>
+</html>
