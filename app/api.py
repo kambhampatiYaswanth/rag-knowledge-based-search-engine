@@ -32,7 +32,7 @@ def home():
 @app.post("/upload")
 def upload_file(file: UploadFile = File(...)):
     global vector_store
-
+   
     os.makedirs("data", exist_ok=True)  # ✅ ensure folder exists
 
     file_path = f"data/{file.filename}"
@@ -63,28 +63,40 @@ def query_rag(request: QueryRequest):
         return {"answer": "No relevant content found."}
 
     # 🧠 build context
-    context = "\n\n".join([
-        doc.page_content for doc in retrieved_docs[:2]
-    ])
+    context = "\n\n".join([doc.page_content for doc in retrieved_docs[:3]])
 
-    # 🎯 strong prompt
+    if not context.strip():
+        return {"answer": "No relevant information found."}
+
     prompt = f"""
-    You are a strict document question-answering system.
-
-    Rules:
-    - Answer ONLY from the context
-    - Do NOT guess
-    - Do NOT include extra information
-    - If not found, say "Not found"
+    Answer the question ONLY from the context.
+    If not found, say "Not found".
 
     Context:
     {context}
 
-    Question: {query}
+    Question: {request.query}
 
-    Answer (short, clean, exact):
+    Answer:
     """
 
-    answer = get_llm_response(prompt)
+    # 🔥 Try LLM
+    try:
+        answer = get_llm_response(prompt)
 
+        if (
+            not answer 
+            or len(answer.strip()) < 5 
+            or "rate limit" in answer.lower()
+            or "error" in answer.lower()
+        ):
+            raise Exception("LLM failed")
+
+    # 🔥 If LLM fails → fallback
+    except Exception as e:
+        print("LLM FAILED:", e)
+
+        # fallback: return best matching chunk
+# better fallback (first relevant chunk)
+        answer = retrieved_docs[0].page_content[:300]
     return {"answer": answer}

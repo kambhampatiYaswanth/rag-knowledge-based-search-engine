@@ -1,16 +1,11 @@
+import os
+
 from google import genai
 
-client = genai.Client(api_key="AIzaSyCnVYZFHrtM96fqsaHYlNZnmWR7klcr80U")
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def get_llm_response(prompt):
     try:
-        print("👉 CLIENT TYPE:", type(client))
-        print("👉 AVAILABLE MODELS:")
-        
-        models = client.models.list()
-        for m in models:
-            print(m.name)
-
         response = client.models.generate_content(
             model="models/gemini-2.0-flash-lite",
             contents=prompt

@@ -12,6 +12,6 @@ def create_vector_store(chunks):
 def retrieve_documents(vector_store, query):
     retriever = vector_store.as_retriever(
         search_type="mmr",  # 🔥 better than similarity
-        search_kwargs={"k": 2}
+        search_kwargs={"k": 4}
     )
     return retriever.invoke(query)

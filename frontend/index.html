@@ -124,6 +124,7 @@ function updateFileName() {
 // ✅ Upload
 async function uploadFile() {
     console.log("UPLOAD CLICKED");
+
     const fileInput = document.getElementById("fileInput");
     const file = fileInput.files[0];
 
@@ -132,10 +133,11 @@ async function uploadFile() {
         return;
     }
 
+    const status = document.getElementById("status");
+    status.innerText = "⏳ Uploading...";
+
     const formData = new FormData();
     formData.append("file", file);
-
-    document.getElementById("result").innerText = " Uploading...";
 
     try {
         const response = await fetch("http://127.0.0.1:8000/upload", {
@@ -146,17 +148,21 @@ async function uploadFile() {
         const data = await response.json();
 
         uploaded = true;
+        clearChat();
 
         document.getElementById("fileName").innerText =
-            " Uploaded: " + file.name;
+            "📄 Uploaded: " + file.name;
 
-        document.getElementById("result").innerText =
-            "✅ Upload successful!";
-
+        status.innerText = "✅ Upload successful!";
+        document.getElementById("chatBox").innerHTML = "";
     } catch (error) {
-        document.getElementById("result").innerText =
-            "❌ Upload failed";
+        console.error(error);
+        status.innerText = "❌ Upload failed";
     }
+}
+function clearChat() {
+    const chatBox = document.getElementById("chatBox");
+    chatBox.innerHTML = "";
 }
 function addMessage(text, type) {
     const chatBox = document.getElementById("chatBox");

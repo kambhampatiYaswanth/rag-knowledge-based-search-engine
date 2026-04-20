@@ -1,4 +1,4 @@
-# 📄 RAG-Based Knowledge Base Search
+# 📄 RAG Knowledge-Based Search Engine
 
 ## 🚀 Overview
 
